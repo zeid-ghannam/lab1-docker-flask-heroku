@@ -13,18 +13,20 @@ class PersonService:
         return result
 
     @staticmethod
-    def create_person(name, age):
-        person = Person(name=name, age=age)
+    def create_person(name, age, address, work):
+        person = Person(name=name, age=age, address=address, work=work)
         db.session.add(person)
         db.session.commit()
         return person_schema.dump(person)
 
     @staticmethod
-    def update_person(person_id, name, age):
+    def update_person(person_id, name, age, address, work):
         person = Person.query.get_or_404(person_id)
         if person:
             person.name = name
             person.age = age
+            person.address = address
+            person.work = work
             db.session.commit()
         return person_schema.dump(person)
 

@@ -26,14 +26,14 @@ def test_get_person(client):
         person_id = person.id
 
     # Test GET request
-    response = client.get(f'/persons/{person_id}')
+    response = client.get(f'/api/v1/persons/{person_id}')
     assert response.status_code == 200
     data = response.get_json()
     assert data['name'] == "John Doe"
     assert data['age'] == 30
 
 def test_get_nonexistent_person(client):
-    response = client.get('/persons/999')
+    response = client.get('/api/v1/persons/999')
     assert response.status_code == 404
 
 def test_get_all_persons(client):
@@ -44,7 +44,7 @@ def test_get_all_persons(client):
         db.session.commit()
 
     # Test GET request
-    response = client.get('/persons')
+    response = client.get('/api/v1/persons')
     assert response.status_code == 200
     data = response.get_json()
     assert len(data) == 2
@@ -53,13 +53,13 @@ def test_get_all_persons(client):
 
 def test_create_person(client):
     # Test POST request
-    response = client.post('/persons', json={"name": "Alice", "age": 25})
+    response = client.post('/api/v1/persons', json={"name": "Alice", "age": 25})
     assert response.status_code == 201
     data = response.get_json()
     assert data['name'] == "Alice"
     assert data['age'] == 25
     assert 'id' in data
-    # assert response.headers['Location'].endswith(f"/persons/{data['id']}")
+    # assert response.headers['Location'].endswith(f"/api/v1/persons/{data['id']}")
 
 def test_update_person(client):
     # Create a test person
@@ -70,14 +70,14 @@ def test_update_person(client):
         person_id = person.id
 
     # Test PATCH request
-    response = client.patch(f'/persons/{person_id}', json={"name": "Robert", "age": 41})
+    response = client.patch(f'/api/v1/persons/{person_id}', json={"name": "Robert", "age": 41})
     assert response.status_code == 200
     data = response.get_json()
     assert data['name'] == "Robert"
     assert data['age'] == 41
 
 def test_update_nonexistent_person(client):
-    response = client.patch('/persons/999', json={"name": "Nobody", "age": 0})
+    response = client.patch('/api/v1/persons/999', json={"name": "Nobody", "age": 0})
     assert response.status_code == 404
 
 def test_delete_person(client):
@@ -89,13 +89,13 @@ def test_delete_person(client):
         person_id = person.id
 
     # Test DELETE request
-    response = client.delete(f'/persons/{person_id}')
+    response = client.delete(f'/api/v1/persons/{person_id}')
     assert response.status_code == 204
 
     # Verify person is deleted
-    response = client.get(f'/persons/{person_id}')
+    response = client.get(f'/api/v1/persons/{person_id}')
     assert response.status_code == 404
 
 def test_delete_nonexistent_person(client):
-    response = client.delete('/persons/999')
+    response = client.delete('/api/v1/persons/999')
     assert response.status_code == 404

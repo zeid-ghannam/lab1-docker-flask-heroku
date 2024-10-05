@@ -13,7 +13,7 @@ def create_app():
     migrate = Migrate(app, db)
     from . import routes
     SWAGGER_URL = '/swagger'
-    API_URL = '/static/swagger.yaml'
+    API_URL = '/static/person-service.yaml'
     swaggerui_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL, config={'app_name': "Person API"})
     app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
     app.register_blueprint(routes.bp)
