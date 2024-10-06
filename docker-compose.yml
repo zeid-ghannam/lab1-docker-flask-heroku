@@ -1,17 +1,34 @@
 services:
-  postgres:
+  db:
     image: library/postgres:13
     container_name: postgres
     restart: on-failure
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: "adminadmin"
+      POSTGRES_DB: distlab
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./postgres/:/docker-entrypoint-initdb.d/
     ports:
       - "5432:5432"
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d distlab"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: person_api
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://admin:adminadmin@db/distlab
 
 volumes:
   db-data:

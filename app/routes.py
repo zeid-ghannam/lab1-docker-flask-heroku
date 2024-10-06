@@ -1,39 +1,52 @@
 from flask import Blueprint, jsonify, request, url_for
-from app.services import PersonService
+from .models import Person
+from .schemas import PersonRequestSchema, PersonResponseSchema
+from . import db
 
-bp = Blueprint('main', __name__)
+person_bp = Blueprint('person', __name__, url_prefix='/api/v1')
+person_request_schema = PersonRequestSchema()
+person_response_schema = PersonResponseSchema()
 
-@bp.route('/api/v1/persons/<int:person_id>', methods=['GET'])
-def get_person(person_id):
-    person = PersonService.get_person(person_id)
-    if person:
-        return jsonify(person)
-    return jsonify({'error': 'Person not found'}), 404
+@person_bp.route('/persons', methods=['GET'])
+def list_persons():
+    persons = Person.query.all()
+    return jsonify(person_response_schema.dump(persons, many=True)), 200
 
-@bp.route('/api/v1/persons', methods=['GET'])
-def get_all_persons():
-    persons = PersonService.get_all_persons()
-    return jsonify(persons)
-
-@bp.route('/api/v1/persons', methods=['POST'])
+@person_bp.route('/persons', methods=['POST'])
 def create_person():
     data = request.json
-    person = PersonService.create_person(data['name'], data['age'], data['address'], data['work'])
-    response = jsonify(person)
-    response.status_code = 201
-    # response.headers['Location'] = url_for('main.get_person', person_id=person.id)
-    return response
+    errors = person_request_schema.validate(data)
+    if errors:
+        return jsonify({"message": "Validation error", "errors": errors}), 400
 
-@bp.route('/api/v1/persons/<int:person_id>', methods=['PATCH'])
-def update_person(person_id):
+    new_person = Person(**data)
+    db.session.add(new_person)
+    db.session.commit()
+
+    return jsonify(person_response_schema.dump(new_person)), 201, {'Location': url_for('person.get_person', id=new_person.id)}
+
+@person_bp.route('/persons/<int:id>', methods=['GET'])
+def get_person(id):
+    person = Person.query.get_or_404(id)
+    return jsonify(person_response_schema.dump(person)), 200
+
+@person_bp.route('/persons/<int:id>', methods=['PATCH'])
+def edit_person(id):
+    person = Person.query.get_or_404(id)
     data = request.json
-    person = PersonService.update_person(person_id, data['name'], data['age'], data['address'], data['work'])
-    if person:
-        return jsonify(person)
-    return jsonify({'error': 'Person not found'}), 404
+    errors = person_request_schema.validate(data, partial=True)
+    if errors:
+        return jsonify({"message": "Validation error", "errors": errors}), 400
 
-@bp.route('/api/v1/persons/<int:person_id>', methods=['DELETE'])
-def delete_person(person_id):
-    if PersonService.delete_person(person_id):
-        return '', 204
-    return jsonify({'error': 'Person not found'}), 404
+    for key, value in data.items():
+        setattr(person, key, value)
+
+    db.session.commit()
+    return jsonify(person_response_schema.dump(person)), 200
+
+@person_bp.route('/persons/<int:id>', methods=['DELETE'])
+def delete_person(id):
+    person = Person.query.get_or_404(id)
+    db.session.delete(person)
+    db.session.commit()
+    return '', 204
